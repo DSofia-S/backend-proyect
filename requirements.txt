@@ -1,0 +1,20 @@
+# Dependencias principales del proyecto Django
+Django==5.0.1
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+django-environ==0.11.2
+django-filter==24.2
+psycopg2-binary==2.9.9
+Pillow==10.2.0
+python-decouple==3.8
+
+# Dependencias de desarrollo y testing
+pytest==7.4.4
+pytest-django==4.7.0
+factory-boy==3.3.0
+coverage==7.4.0
+
+# Dependencias para documentación de API
+drf-spectacular==0.27.0
+
+
