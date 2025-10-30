@@ -13,8 +13,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     # API endpoints
-    path('api/', include('products.urls')),
-    path('api/', include('categories.urls')),
+    path('', include('products.urls')),
+    path('', include('categories.urls')),
     
     # Documentación de la API
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

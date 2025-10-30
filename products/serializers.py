@@ -3,8 +3,8 @@ Serializadores para la API de productos.
 Convierte los modelos Django a JSON y viceversa.
 """
 from rest_framework import serializers
+from categories.models import Category
 from .models import Product, ProductImage
-from categories.serializers import CategorySerializer
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
@@ -34,8 +34,7 @@ class ProductSerializer(serializers.ModelSerializer):
     is_in_stock = serializers.SerializerMethodField()
     
     # Relaciones
-    category = CategorySerializer(read_only=True)
-    category_id = serializers.IntegerField(write_only=True)
+    category_name = serializers.CharField(source='category.name', read_only=True)
     
     # Imágenes adicionales
     additional_images = ProductImageSerializer(many=True, read_only=True)
@@ -49,7 +48,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'price',
             'price_display',
             'category',
-            'category_id',
+            'category_name',
             'image',
             'additional_images',
             'stock',
@@ -73,16 +72,14 @@ class ProductSerializer(serializers.ModelSerializer):
         """
         return obj.is_in_stock()
 
-    def validate_category_id(self, value):
+    def validate_category(self, value):
         """
         Valida que la categoría exista y esté activa.
         """
-        from categories.models import Category
-        try:
-            category = Category.objects.get(id=value, is_active=True)
-        except Category.DoesNotExist:
+        # value ya es una instancia de Category
+        if not value.is_active:
             raise serializers.ValidationError(
-                "La categoría especificada no existe o no está activa."
+                "La categoría especificada no está activa."
             )
         return value
 
@@ -118,23 +115,58 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'price',
-            'category_id',
+            'category',
             'image',
             'stock'
         ]
 
-    def validate_category_id(self, value):
+    def validate_category(self, value):
         """
         Valida que la categoría exista y esté activa.
         """
-        from categories.models import Category
-        try:
-            category = Category.objects.get(id=value, is_active=True)
-        except Category.DoesNotExist:
+        # value ya es una instancia de Category porque es un PrimaryKeyRelatedField
+        if not value.is_active:
             raise serializers.ValidationError(
-                "La categoría especificada no existe o no está activa."
+                "La categoría especificada no está activa."
             )
         return value
+
+    def validate_price(self, value):
+        """
+        Valida que el precio sea positivo.
+        """
+        if value <= 0:
+            raise serializers.ValidationError(
+                "El precio debe ser mayor a cero."
+            )
+        return value
+
+    def validate_stock(self, value):
+        """
+        Valida que el stock no sea negativo.
+        """
+        if value < 0:
+            raise serializers.ValidationError(
+                "El stock no puede ser negativo."
+            )
+        return value
+
+    def create(self, validated_data):
+        """
+        Sobrescribe create para agregar logging.
+        """
+        print("=== CREATING PRODUCT ===")
+        print("Validated data:", validated_data)
+        
+        try:
+            # Crear el producto normalmente
+            product = super().create(validated_data)
+            print(f"✅ Producto creado exitosamente: {product.id}")
+            return product
+            
+        except Exception as e:
+            print(f"💥 Error al crear producto: {str(e)}")
+            raise
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
@@ -148,22 +180,40 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'price',
-            'category_id',
+            'category',
             'image',
             'stock',
             'is_active'
         ]
 
-    def validate_category_id(self, value):
+    def validate_category(self, value):
         """
         Valida que la categoría exista y esté activa.
         """
-        from categories.models import Category
-        try:
-            category = Category.objects.get(id=value, is_active=True)
-        except Category.DoesNotExist:
+        # value ya es una instancia de Category
+        if not value.is_active:
             raise serializers.ValidationError(
-                "La categoría especificada no existe o no está activa."
+                "La categoría especificada no está activa."
+            )
+        return value
+
+    def validate_price(self, value):
+        """
+        Valida que el precio sea positivo.
+        """
+        if value <= 0:
+            raise serializers.ValidationError(
+                "El precio debe ser mayor a cero."
+            )
+        return value
+
+    def validate_stock(self, value):
+        """
+        Valida que el stock no sea negativo.
+        """
+        if value < 0:
+            raise serializers.ValidationError(
+                "El stock no puede ser negativo."
             )
         return value
 
@@ -219,6 +269,3 @@ class ProductStockUpdateSerializer(serializers.Serializer):
             )
         
         return data
-
-
-

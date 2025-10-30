@@ -65,7 +65,7 @@ class ProductListCreateView(generics.ListCreateAPIView):
         category = self.request.query_params.get('category')
         if category:
             queryset = queryset.filter(category__name__icontains=category)
-        
+    
         return queryset
 
 
@@ -238,6 +238,3 @@ class ProductImageView(generics.ListCreateAPIView):
             serializer.save(product=product)
         except Product.DoesNotExist:
             raise serializers.ValidationError("Producto no encontrado")
-
-
-

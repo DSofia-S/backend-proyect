@@ -24,6 +24,7 @@ urlpatterns = [
     
     # Gestión de imágenes de productos
     path('products/<int:product_id>/images/', views.ProductImageView.as_view(), name='product-images'),
+    
 ]
 
 
